@@ -1,118 +1,143 @@
 # ML Magnetometry — Interactive Demo
 
-An interactive **Streamlit demonstration for machine-learning classification of magnetic states from magnetic hysteresis loops**. The interface loads real trained model checkpoints, visualizes predictions, and supports uploading magnetic measurements. It is the deployment-only companion to the ML Magnetometry research project, not the training or simulation pipeline.
+An interactive web application for **machine learning-based classification of magnetic states from magnetic hysteresis loops**, developed using Python, PyTorch, and Streamlit.
 
-## What the app does
+The application provides a visual interface for exploring magnetic hysteresis data, comparing machine learning models, and predicting magnetic states from simulated or experimental measurements.
 
-- Classifies magnetic states as **SPM**, **SD**, or **MD** using saved machine-learning checkpoints.
-- Supports the model families registered in the project, including MLP, RNN and physics-/Preisach-enhanced variants, when their checkpoints are provided.
-- Offers ensemble predictions across available training seeds, plots and model interpretation tools.
-- Accepts uploaded MPMS3 `.dat` files or a compatible measurement `.csv` for exploratory inference. Experimental measurements may differ from the simulation training distribution; predictions should be interpreted cautiously.
-- Can optionally display test-dataset examples. **This is disabled by default** to avoid exposing private research samples through the public demo.
+**[Launch the Interactive Demo](https://ml-magnetometry-demo.streamlit.app/)**
 
-The application never generates synthetic predictions when trained models are missing.
+## Overview
 
-## Architecture and privacy
+Magnetic hysteresis loops contain valuable information about the magnetic behavior of a system. Machine learning offers an approach to identifying underlying magnetic states by recognizing patterns in these measurements.
+
+ML Magnetometry explores this approach using neural network architectures trained to distinguish between three magnetic states:
+
+- **Superparamagnetic (SPM):** Magnetic behavior characterized by thermally fluctuating magnetization.
+- **Single-domain (SD):** Magnetic configurations characterized by a single magnetic domain.
+- **Multi-domain (MD):** Magnetic configurations involving multiple magnetic domains.
+
+The application provides an interactive environment for investigating these classifications and exploring model predictions.
+
+## Features
+
+### Magnetic State Classification
+
+Predict magnetic states from magnetic hysteresis measurements using pretrained machine learning models.
+
+The application provides:
+
+- Classification into SPM, SD, and MD magnetic states.
+- Prediction scores for each magnetic class.
+- Ensemble predictions combining multiple independently trained models, when available.
+- Visualization of the input hysteresis curves and classification results.
+
+### Machine Learning Models
+
+The application supports several neural network architectures and feature configurations.
+
+| Architecture | Description |
+|---|---|
+| MLP | Multilayer Perceptron |
+| MLP + Physics | MLP incorporating physics-based features |
+| MLP + Preisach | MLP enhanced with Preisach-derived features |
+| MLP + Physics + Preisach | MLP combining physics-based and Preisach features |
+| RNN | Recurrent Neural Network |
+| RNN + Physics | RNN incorporating physics-based features |
+| RNN + Preisach | RNN enhanced with Preisach-derived features |
+| RNN + Physics + Preisach | RNN combining physics-based and Preisach features |
+
+Model availability depends on the pretrained checkpoints included in the deployment.
+
+### Interactive Hysteresis Visualization
+
+Explore magnetic hysteresis loops and their associated predictions through interactive visualizations.
+
+Depending on the available data, the interface supports examining magnetic responses at different temperatures and comparing their behavior across measurements.
+
+### Experimental Data Analysis
+
+Users can upload magnetic measurements for exploratory classification.
+
+Supported input formats include:
+
+- MPMS3 measurement files (`.dat`).
+- Compatible measurement datasets (`.csv`).
+
+Uploaded measurements are processed by the available pretrained models to estimate the corresponding magnetic state.
+
+Because the models are trained on simulated data, experimental measurements may introduce differences in noise, units, measurement protocols, and physical conditions that affect prediction reliability.
+
+### Model Interpretability
+
+The application includes tools for investigating model predictions and understanding which aspects of the input data influence classification.
+
+Depending on the selected model, these may include:
+
+- Integrated Gradients attribution.
+- Analysis of contributions from different regions of the hysteresis curves.
+- Preisach-based sensitivity analysis.
+- Comparison of predictions across model architectures.
+
+These methods support exploration of model behavior rather than providing definitive physical explanations.
+
+## Application Architecture
+
+The repository contains the source code required to run the interactive application, including its inference pipeline, model definitions, preprocessing utilities, and visualization components.
 
 ```text
-Public GitHub repo (this repository)
-  app.py                  -> downloads private assets, prepares paths, launches Streamlit
-  asset_paths.py          -> repairs paths in the downloaded manifest
-  src/                    -> inference and visualization source code
-  requirements.txt
-  .python-version         -> Python 3.11 locally
-
-Private Hugging Face *dataset* repo (NOT this GitHub repo)
-  checkpoints/<model_name>/seed_0.pt
-  checkpoints/<model_name>/seed_1.pt       (optional)
-  dataset/ml_manifest.csv
-  dataset/sample_..._hysteresis.csv       (for relevant samples)
-  dataset/images/*.npy                    (if image-based models need them)
-  dataset/other auxiliary files          (if required by your workflow)
+ML-Magnetometry-Demo/
+├── app.py
+├── asset_paths.py
+├── requirements.txt
+├── .python-version
+└── src/
+    ├── config.py
+    ├── dataset_ml/
+    │   └── datasets_ml.py
+    └── models/
+        ├── demo.py
+        ├── registry.py
+        ├── basic_models.py
+        ├── presentation_plots.py
+        └── ...
 ```
 
-Only the code goes to **public GitHub**. Checkpoints and the manifest/files go to a **private Hugging Face Dataset repository**, accessible through a restricted token stored in **Streamlit Secrets**. The public app can still reveal *predictions, visualizations, or data* it chooses to display; a private backend does not make the public UI confidential.
+The application is deployed using Streamlit Community Cloud.
 
-### Important: manifests created on Windows
+Trained model checkpoints and supporting inference data are stored separately in a private Hugging Face repository and retrieved by the application when required.
 
-The original `dataset/ml_manifest.csv` may contain paths such as:
+This separation keeps the public repository focused on the application source code without distributing the complete research datasets or trained model weights.
 
-```text
-C:\Users\User\Documents\...\dataset\sample_d_100nm_..._hysteresis.csv
-```
+## Technologies
 
-Those paths cannot work on a Linux server. At startup, `asset_paths.py` **repairs the downloaded copy** of the manifest, resolving each path to an actual file under the downloaded `dataset/` directory. It handles Windows absolute paths, repository-relative paths and unique filenames. For example, the value above maps to a file such as:
+The project is developed using:
 
-```text
-/mount/src/ml-magnetometry-demo/dataset/sample_d_100nm_..._hysteresis.csv
-```
+- **Python** — Core programming language.
+- **PyTorch** — Neural network architectures and model inference.
+- **Streamlit** — Interactive web interface.
+- **NumPy and Pandas** — Numerical processing and data manipulation.
+- **Matplotlib** — Scientific visualization.
+- **Scikit-learn** — Machine learning utilities.
+- **Hugging Face Hub** — Private storage and retrieval of pretrained models and inference data.
 
-This adjustment does **not** modify the manifest stored on Hugging Face. Upload the actual files corresponding to rows that the demo needs. Any missing or ambiguous filenames will be reported in the app as dataset path warnings; the application cannot reconstruct a file that was not uploaded.
+## Project Scope
 
-**Keep filenames unique** in the downloaded dataset when possible. If two files share the same filename, preserve their `dataset/` subdirectories in the manifest for unambiguous mapping.
+This repository focuses on the interactive demonstration of machine learning methods for magnetic state classification.
 
-Some features (including parts of the explanation and reference-based inference) read `train` samples, even when visitors upload their own measurements. You may therefore need a small representative *training* subset with valid manifest entries, not just checkpoints. Features requiring files that were not uploaded will not run.
+It includes the code required for inference, data processing, model interpretation, and visualization.
 
-## 1. Upload private assets to Hugging Face
+The complete research workflow, including micromagnetic simulations, dataset generation, model training, and experiment management, is maintained separately.
 
-1. Create a **private Dataset repository**: https://huggingface.co/new-dataset
-2. Prepare an `hf_assets/` directory with the desired `checkpoints/` and `dataset/` subdirectories as shown above. Do not upload your full 20 GB research archive unless needed by the demo.
-3. Upload the folder, preserving its structure. With the Hugging Face CLI installed and authenticated:
+## Scientific Considerations
 
-   ```bash
-   uv tool install huggingface_hub
-   hf auth login
-   hf upload USERNAME/ML-Magnetometry-Private ./hf_assets . --repo-type dataset
-   ```
+The application is intended for scientific research, demonstration, and exploratory analysis.
 
-4. Generate a **fine-grained read-only** token with permission to read that private repository: https://huggingface.co/settings/tokens
+Predictions depend on the characteristics of the training dataset and the assumptions underlying the machine learning models.
 
-## 2. Deploy on Streamlit Community Cloud
+In particular, applying models trained on simulated hysteresis curves to experimental measurements may introduce domain differences that influence classification accuracy.
 
-1. Push **only the contents of this ZIP** to your public GitHub demo repository. Do not commit `dataset/`, `checkpoints/`, `.env`, tokens or `.streamlit/secrets.toml`.
-2. Create an app at https://share.streamlit.io with main file **`app.py`**.
-3. In **Advanced settings**, select **Python 3.11**. This is important: the pinned `torch==2.5.1+cpu` does not support Python 3.14. If the existing app runs Python 3.14, recreate the Streamlit deployment using Python 3.11; `.python-version` is a local hint and does not reliably select the cloud runtime.
-4. Configure the app's **Secrets** (TOML):
+Prediction scores should not automatically be interpreted as calibrated probabilities, and model outputs should be evaluated alongside experimental evidence and established physical understanding.
 
-   ```toml
-   HF_REPO_ID = "USERNAME/ML-Magnetometry-Private"
-   HF_TOKEN = "hf_READ_ONLY_TOKEN"
-   # Optional: lock assets to a given Hugging Face commit
-   # HF_REVISION = "commit_hash"
-   # Optional: only enable if you have permission to display test samples
-   # SHOW_TEST_DATASET = "true"
-   ```
+## License
 
-5. Deploy or reboot. The app downloads private assets using `huggingface_hub.snapshot_download`, repairs the local manifest, then starts the actual inference interface.
-
-The private token is never required in GitHub. Do not paste real tokens into issues, screenshots, or logs.
-
-## 3. Run locally with uv
-
-Use Python 3.11. For a project-isolated environment:
-
-```bash
-uv venv --python 3.11
-uv pip install -r requirements.txt
-```
-
-Set `HF_REPO_ID` and `HF_TOKEN` as environment variables, then run:
-
-```bash
-uv run --no-project streamlit run app.py
-```
-
-On PowerShell, assign environment variables using `$env:HF_REPO_ID="..."` and `$env:HF_TOKEN="..."`.
-
-## Troubleshooting
-
-- **Dependency resolver reports `cp314` and `torch==2.5.1+cpu`:** deploy with **Python 3.11**.
-- **Missing secrets or download failure:** check `HF_REPO_ID`, fine-grained token permissions, repository visibility and Hugging Face filenames.
-- **No checkpoints:** at least one file like `checkpoints/mlp/seed_0.pt` must exist in the private Dataset repository.
-- **Dataset path warnings / file-not-found:** upload the missing curve/image files with matching relative paths; the Windows path in the CSV is not a real server file.
-- **Model errors when uploading measurements:** certain inference and explanation methods need training reference samples; include the relevant train rows and files from the dataset.
-- **Test dataset not visible:** intentionally disabled by default for privacy. Set `SHOW_TEST_DATASET = "true"` only when appropriate and include test files.
-
-## Research disclaimer
-
-This is a research demonstrator, not a validated diagnostic tool. Inference on uploaded measurements is exploratory, particularly when measurement temperatures, units or protocols differ from training data. Model confidence is not a substitute for experimental validation.
+No license is specified in this repository. All rights are reserved unless a license is explicitly added.
