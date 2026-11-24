@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.DS_Store
+.streamlit/secrets.toml
+# Private model/data assets (downloaded on the server; NEVER push to GitHub)
+/dataset/
+/checkpoints/
+/.cache/
+/.hf-cache/
